@@ -29,7 +29,22 @@ export default function App() {
         <section className="content">
           <div className="section-heading"><div><span className="eyebrow">01 · SCENARIOS</span><h2>编辑资金情景</h2></div><button className="secondary-button" type="button" onClick={() => viewModel.addScenario()}>＋ 新增情景</button></div>
           <div className="scenario-list">
-            {state.scenarios.map((scenario) => <ScenarioForm key={scenario.id} scenario={scenario} errors={state.errors[scenario.id] ?? {}} onUpdate={(field, value) => viewModel.updateField(scenario.id, field, value)} onRename={(name) => viewModel.renameScenario(scenario.id, name)} onDuplicate={() => viewModel.duplicateScenario(scenario.id)} onRemove={() => viewModel.removeScenario(scenario.id)} />)}
+            {state.scenarios.map((scenario) => (
+              <ScenarioForm
+                key={scenario.id}
+                scenario={scenario}
+                errors={state.errors[scenario.id] ?? {}}
+                history={state.histories[scenario.id]}
+                currentProjection={state.projections.find((projection) => projection.scenarioId === scenario.id)}
+                replay={viewModel.getReplay(scenario.id)}
+                onUpdate={(field, value) => viewModel.updateField(scenario.id, field, value)}
+                onRename={(name) => viewModel.renameScenario(scenario.id, name)}
+                onDuplicate={() => viewModel.duplicateScenario(scenario.id)}
+                onRemove={() => viewModel.removeScenario(scenario.id)}
+                onSeek={(seq) => viewModel.selectReplay(scenario.id, seq)}
+                onClearHistory={() => viewModel.clearHistory(scenario.id)}
+              />
+            ))}
           </div>
 
           <div className="results-heading"><div><span className="eyebrow">02 · OUTCOME</span><h2>长期结果对比</h2></div><div className="result-highlight"><span>最高名义终值</span><strong>¥ {formatMoney(totalValue)}</strong></div></div>
