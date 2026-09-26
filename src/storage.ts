@@ -1,6 +1,8 @@
-import type { PersistedWorkspace } from './types';
+import { revivePersistedHistory } from './history';
+import type { PersistedHistory, PersistedWorkspace } from './types';
 
 const STORAGE_KEY = 'money-scenario.workspace.v1';
+const HISTORY_KEY = 'money-scenario.history.v1';
 const DB_NAME = 'money-scenario-db';
 
 function validWorkspace(value: unknown): value is PersistedWorkspace {
@@ -52,6 +54,58 @@ export async function writeIndexedWorkspace(workspace: PersistedWorkspace): Prom
       request.onsuccess = () => {
         const transaction = request.result.transaction('workspace', 'readwrite');
         transaction.objectStore('workspace').put(workspace, 'active');
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+      };
+      request.onerror = () => reject(request.error);
+    } catch (error) {
+      reject(error);
+    }
+  });
+}
+
+export async function readLocalHistory(): Promise<PersistedHistory | null> {
+  try {
+    const raw = localStorage.getItem(HISTORY_KEY);
+    if (!raw) return null;
+    return revivePersistedHistory(JSON.parse(raw));
+  } catch {
+    return null;
+  }
+}
+
+export async function writeLocalHistory(history: PersistedHistory): Promise<void> {
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+export async function readIndexedHistory(): Promise<PersistedHistory | null> {
+  if (typeof indexedDB === 'undefined') return null;
+  return new Promise((resolve) => {
+    try {
+      const request = indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('workspace');
+      request.onsuccess = () => {
+        const transaction = request.result.transaction('workspace', 'readonly');
+        const getRequest = transaction.objectStore('workspace').get('history');
+        getRequest.onsuccess = () => resolve(revivePersistedHistory(getRequest.result));
+        getRequest.onerror = () => resolve(null);
+      };
+      request.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+export async function writeIndexedHistory(history: PersistedHistory): Promise<void> {
+  if (typeof indexedDB === 'undefined') return;
+  await new Promise<void>((resolve, reject) => {
+    try {
+      const request = indexedDB.open(DB_NAME, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore('workspace');
+      request.onsuccess = () => {
+        const transaction = request.result.transaction('workspace', 'readwrite');
+        transaction.objectStore('workspace').put(history, 'history');
         transaction.oncomplete = () => resolve();
         transaction.onerror = () => reject(transaction.error);
       };

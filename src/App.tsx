@@ -1,5 +1,6 @@
 import './styles.css';
 import { ComparisonChart } from './components/ComparisonChart';
+import { HistoryPanel } from './components/HistoryPanel';
 import { ScenarioForm } from './components/ScenarioForm';
 import { ScenarioTable } from './components/ScenarioTable';
 import { formatMoney } from './domain';
@@ -34,6 +35,9 @@ export default function App() {
 
           <div className="results-heading"><div><span className="eyebrow">02 · OUTCOME</span><h2>长期结果对比</h2></div><div className="result-highlight"><span>最高名义终值</span><strong>¥ {formatMoney(totalValue)}</strong></div></div>
           {state.projections.length > 0 ? <><ComparisonChart scenarios={state.scenarios} projections={state.projections} /><ScenarioTable scenarios={state.scenarios} projections={state.projections} /></> : <div className="empty-result"><span>⌁</span><strong>修正参数后即可生成对比</strong><p>请检查标红字段，年限最多支持 60 年。</p></div>}
+
+          <div className="results-heading"><div><span className="eyebrow">03 · HISTORY</span><h2>变更流水与回放</h2></div></div>
+          <HistoryPanel scenarios={state.scenarios} histories={state.histories} projections={state.projections} replay={state.replay} onSelectScenario={(id) => viewModel.openReplay(id)} onPositionChange={(position) => viewModel.setReplayPosition(position)} onClear={(id) => viewModel.clearHistory(id)} />
           <footer><span>ⓘ 结果为基于输入假设的数学模拟，不代表未来实际表现，也不构成任何投资建议。</span><span>本地优先 · 保存后可恢复</span></footer>
         </section>
       </div>
